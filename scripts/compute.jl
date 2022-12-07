@@ -85,7 +85,7 @@ using Plots
 pgfplotsx()
 
 # Change some of the default parameters for plots
-default(fontfamily="Computer Modern", dpi=300, legend=nothing)
+default(fontfamily="Computer Modern", dpi=300)
 
 # Define the parameters of the Galaxy potential model
 
@@ -116,27 +116,46 @@ function navarro_frenk_white_phi_dr(r, z, m, a)::F
 end
 
 "Compute the value of ∂Φ(R, Z)/∂R [100 km/s²]"
-function phi_dr(r, z)::F
-    return miyamoto_nagai_phi_dr(r, z, M_B, A_B, B_B) + # Bulge
-           miyamoto_nagai_phi_dr(r, z, M_D, A_D, B_D) + # Disk
+function phi_dr(r, z, m_b, m_d)::F
+    return miyamoto_nagai_phi_dr(r, z, m_b, A_B, B_B) + # Bulge
+           miyamoto_nagai_phi_dr(r, z, m_d, A_D, B_D) + # Disk
            navarro_frenk_white_phi_dr(r, z, M_H, A_H)   # Halo
 end
 
 "Compute the value of circular velocity according to v_c(R) = √(R * ∂Φ(R, 0)/∂R) [km/s]"
-v_c(r) = √(r * phi_dr(r, 0) * 100)
+v_c(r, m_b, m_d) = √(r * phi_dr(r, 0, m_b, m_d) * 100)
 
-println(" "^4, "> Plotting the rotation curves...")
+println(pad, "> Plotting the rotation curves...")
 
-# Plot the rotation curve
-plot(
-    v_c, 1, 20;
-    xlabel=L"R \;\, [\mathrm{kpc}]",
-    ylabel=L"v_c \; [\mathrm{km \, s^{-1}}]",
-    xminorticks=5
-)
+
+"Reset the global plot"
+function reset()
+    Plots.CURRENT_PLOT.nullableplot = nothing
+end
+
+"Plot the rotation curve with the specified parameters"
+function plot_with(m_b::F, m_d::F, label)
+    plot!(
+        (r) -> v_c(r, m_b, m_d), 1, 20;
+        label,
+        xlabel=L"R \;\, [\mathrm{kpc}]",
+        ylabel=L"v_c \; [\mathrm{km \, s^{-1}}]",
+        legend=(0.25, 0.4),
+        xminorticks=5
+    )
+end
+
+# Plot rotation curves with different variations of masses
+reset()
+plot_with(M_B, M_D, "Default")
+plot_with(M_B + 0.1 * M_B, M_D, L"M_b + 10%")
+plot_with(M_B - 0.1 * M_B, M_D, L"M_b - 10%")
+plot_with(M_B, M_D + 0.1 * M_D, L"M_d + 10%")
+plot_with(M_B, M_D - 0.1 * M_D, L"M_d - 10%")
+plot_with(M_B + 0.1 * M_B, M_D - 0.1 * M_D, L"M_b + 10%, M_d - 10%")
+plot_with(M_B - 0.1 * M_B, M_D + 0.1 * M_D, L"M_b - 10%, M_d + 10%")
 
 # Save the figure
-savefig(joinpath(PLOTS_DIR, "Rotation curve$(POSTFIX).pdf"))
-savefig(joinpath(PLOTS_DIR, "Rotation curve$(POSTFIX).png"))
+savefig(joinpath(PLOTS_DIR, "Rotation curves$(POSTFIX).pdf"))
 
 println()
