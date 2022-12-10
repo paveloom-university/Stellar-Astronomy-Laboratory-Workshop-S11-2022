@@ -134,7 +134,7 @@ A_Hᵣ = [0.1, 30.0]
 θᵤ = map(v -> last(v), θᵣ)
 
 # Define the range of galactocentric distances
-r_range = 1:0.1:20
+r_range = 1:0.01:20
 
 "Compute the value of the R derivative of the Miyamoto & Nagai potential [100 km/s²]"
 function miyamoto_nagai_phi_dr(r, z, m, a, b)::F
@@ -184,12 +184,12 @@ default(legend=(0.25, 0.4))
 # Plot rotation curves with different variations of masses
 reset()
 plot_with()
-plot_with(L"$ M_b $ +10% off", m_b=M_B + 0.1 * M_B)
-plot_with(L"$ M_b $ --10% off", m_b=M_B - 0.1 * M_B)
-plot_with(L"$ M_d $ +10% off", m_d=M_D + 0.1 * M_D)
-plot_with(L"$ M_d $ --10% off", m_d=M_D - 0.1 * M_D)
-plot_with(L"$ M_b $ +10% off, $ M_d $ --10% off", m_b=M_B + 0.1 * M_B, m_d=M_D - 0.1 * M_D)
-plot_with(L"$ M_b $ --10% off, $ M_d $ +10% off", m_b=M_B - 0.1 * M_B, m_d=M_D + 0.1 * M_D)
+plot_with(L"$ M_b $ +10% off", m_b=M_B * 1.1)
+plot_with(L"$ M_b $ --10% off", m_b=M_B * 0.9)
+plot_with(L"$ M_d $ +10% off", m_d=M_D * 1.1)
+plot_with(L"$ M_d $ --10% off", m_d=M_D * 0.9)
+plot_with(L"$ M_b $ +10% off, $ M_d $ --10% off", m_b=M_B * 1.1, m_d=M_D * 0.9)
+plot_with(L"$ M_b $ --10% off, $ M_d $ +10% off", m_b=M_B * 0.9, m_d=M_D * 1.1)
 
 # Save the figure
 savefig(joinpath(PLOTS_DIR, "Rotation curves$(POSTFIX).pdf"))
@@ -215,7 +215,7 @@ println(pad, pad, "... by varying the mass of the bulge (with minus 10% of the d
 
 # Find the optimal parameter via the least squares method
 res = optimize(
-    θ -> residuals_with(m_b=θ[1], m_d=M_D - 0.1 * M_D),
+    θ -> residuals_with(m_b=θ[1], m_d=M_D * 0.9),
     [θₗ[1]],
     [θᵤ[1]],
     [θ₀[1]],
@@ -235,11 +235,14 @@ end
 # Get the minimizer
 m_b_optimal = res.minimizer[1]
 
+# Print the results
+println('\n', pad, pad, pad, "Done with M_b = $(m_b_optimal).", '\n')
+
 println(pad, pad, "... by varying the mass of the bulge and its scale parameter (with minus 10% of the disk mass)")
 
 # Do the same, but this time vary the scale parameter of the bulge, too
 res = optimize(
-    θ -> residuals_with(m_b=θ[1], b_b=θ[2], m_d=M_D - 0.1 * M_D),
+    θ -> residuals_with(m_b=θ[1], b_b=θ[2], m_d=M_D * 0.9),
     θₗ[1:2],
     θᵤ[1:2],
     θ₀[1:2],
@@ -259,6 +262,9 @@ end
 # Get the minimizer
 θ_b_optimal = res.minimizer
 
+# Print the results
+println('\n', pad, pad, pad, "Done with M_b = $(θ_b_optimal[1]) and b_b = $(θ_b_optimal[2]).", '\n')
+
 println(pad, pad, "... by varying all parameters (off by -10%)")
 
 # Let's reverse it. Try to get the initial parameters
@@ -267,7 +273,7 @@ res = optimize(
     θ -> residuals_with(m_b=θ[1], b_b=θ[2], m_d=θ[3], a_d=θ[4], b_d=θ[5], m_h=θ[6], a_h=θ[7]),
     θₗ,
     θᵤ,
-    map(x -> x - 0.1 * x, θ₀),
+    map(x -> x * 0.9, θ₀),
     Fminbox(NelderMead()),
     Optim.Options(
         extended_trace=true,

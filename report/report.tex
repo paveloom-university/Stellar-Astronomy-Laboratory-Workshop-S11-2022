@@ -1,0 +1,197 @@
+\documentclass[a4paper, oneside]{article}
+\special{pdf:minorversion 6}
+
+\usepackage{geometry}
+\geometry{
+  textwidth=358.0pt,
+  textheight=608.0pt,
+  top=90pt,
+  left=113pt,
+}
+
+\usepackage[english, russian]{babel}
+
+\usepackage{fontspec}
+\setmainfont[
+  Ligatures=TeX,
+  Extension=.otf,
+  BoldFont=cmunbx,
+  ItalicFont=cmunti,
+  BoldItalicFont=cmunbi,
+]{cmunrm}
+\usepackage{unicode-math}
+
+\usepackage[bookmarks=false]{hyperref}
+\hypersetup{pdfstartview={FitH},
+            colorlinks=true,
+            linkcolor=magenta,
+            pdfauthor={Павел Соболев}}
+
+\usepackage[table]{xcolor}
+\usepackage{booktabs}
+\usepackage{caption}
+
+\usepackage{float}
+\usepackage{subcaption}
+\usepackage{graphicx}
+\graphicspath{ {../plots/} }
+\DeclareGraphicsExtensions{.pdf, .png}
+
+\usepackage{sectsty}
+\sectionfont{\centering}
+\subsubsectionfont{\centering\normalfont\itshape}
+
+\newcommand{\su}{\vspace{-0.5em}}
+\newcommand{\npar}{\par\vspace{\baselineskip}}
+
+\setlength{\parindent}{0pt}
+
+\DeclareMathOperator{\atantwo}{atan2}
+
+\usepackage{diagbox}
+
+\newlength{\imagewidth}
+\newlength{\imageheight}
+\newcommand{\subgraphics}[1]{
+\settowidth{\imagewidth}{\includegraphics[height=\imageheight]{#1}}%
+\begin{subfigure}{\imagewidth}%
+    \includegraphics[height=\imageheight]{#1}%
+\end{subfigure}%
+}
+
+\hypersetup{pdftitle={Лабораторный практикум (11-ый семестр, 2022)}}
+
+\begin{document}
+
+\subsubsection*{Лабораторный практикум (11-ый семестр, 2022)}
+\section*{Вписывание кривых вращения}
+\subsubsection*{Руководитель: А. В. Веселова \hspace{2em} Выполнил: П. Л. Соболев}
+
+\vspace{3em}
+
+\subsection*{Задачи}
+
+\begin{itemize}
+  \setlength\itemsep{-0.1em}
+  \item Получить кривую вращения модельной галактики при осесимметричной модели потенциала;
+  \item Посмотреть, как видоизменяется кривая вращения при варьировании масс балджа и диска;
+  \item Написать программу, позволяющую по кривой вращения восстановить параметры потенциала (при свободных и фиксированных параметрах).
+\end{itemize}
+
+\subsection*{Теория}
+
+В качестве модели используем осесимметричную модель потенциала Галактики с тремя компонентами: балдж, диск и гало:
+
+\su
+\begin{equation}
+\begin{gathered}
+  \Phi(R, Z) = \Phi_b(r(R, Z)) + \Phi_d(R, Z) + \Phi_h(r(R, Z)), \\
+\end{gathered}
+\end{equation}
+
+где $ r^2 = R^2 + Z^2 $. В качестве потенциала балджа возьмем потенциал Пламмера
+
+\su
+\begin{equation}
+  \Phi_b(r; M_b, b_b) = - \frac{M_b}{(r^2 + b_b^2)^{1/2}},
+\end{equation}
+
+в качестве потенциала диска --- потенциал Миямото–Нагаи
+
+\su
+\begin{equation}
+  \Phi_d(R, Z; M_d, a_d, b_d) = - \frac{M_d}{\left[ R^2 + \left( a_d + \sqrt{Z^2 + b_d^2} \right)^2 \right]^{1/2}},
+\end{equation}
+
+в качестве потенциала гало --- потенциал Наварро–Френка–Уайта
+
+\su
+\begin{equation}
+  \Phi_h(r; M_h, a_h) = - \frac{M_h}{r} \ln{\left( 1 + \frac{r}{a_h} \right)}.
+\end{equation}
+
+Значения параметров возьмем из работы Bajkova, Bobylev (2020):
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{cc}
+    \toprule
+    Параметр &
+    Значение \\
+    \midrule
+    $ M_b \; [M_0] $ & 443 \\
+    $ b_b \; [\mathrm{кпк}] $ & 0.2672 \\
+    $ M_d \; [M_0] $ & 2798 \\
+    $ a_d \; [\mathrm{кпк}] $ & 4.40 \\
+    $ b_d \; [\mathrm{кпк}] $ & 0.3084 \\
+    $ M_h \; [M_0] $ & 12474 \\
+    $ a_h \; [\mathrm{кпк}] $ & 7.7 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Здесь $ M_0 = 2.325 \times 10^7 M_\odot $. Полагая, что расстояния также измеряются в кпк, размерность $ \Phi(R, Z) $ равна $ 100 \; \mathrm{км}^2 \; \mathrm{с}^{-2} $.
+
+\vspace{\baselineskip}
+
+Кривые вращения вычисляются как $ u_c(R) $ по соотношению $ u_c^2 = R \left. \frac{\partial \Phi(R, Z)}{\partial R} \right|_{Z=0} $.
+
+\subsection*{Реализация}
+
+Результаты получены с помощью скрипта, написанного на языке программирования \href{https://julialang.org}{Julia}. Код расположен в GitHub репозитории \href{https://github.com/paveloom-university/Stellar-Astronomy-Laboratory-Workshop-S11-2022}{Stellar Astronomy Laboratory Workshop S11-2022}. Для воспроизведения результатов следуй инструкциям в файле {\footnotesize \texttt{README.md}}. \npar
+
+Начнем с кривых вращения:
+
+\captionsetup{justification=centering}
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[scale=0.75]{Rotation curves}
+  \caption{Начальная кривая вращения и кривые вращения, \\ получаемые при вариации масс балджа и диска}
+\end{figure}
+
+При увеличении массы получаем б\'ольшие круговые скорости, при уменьшении --- меньшие. Изменение массы балджа оказывает больший эффект, чем изменение массы диска, вблизи центра галактики, меняясь ролями по мере увеличения расстояния. Парные изменения с разными знаками дают кривые, лежащие между предыдущими и пересекающие начальную кривую вращения единожды.
+
+\vspace{\baselineskip}
+
+Для вписывания кривых воспользуемся методом наименьших квадратов: будем искать минимум суммы квадратов разниц значений начальной кривой вращения и кривой вращения, полученной при пробных значениях параметров. В качестве метода оптимизации возьмем метод Нелдера -- Мида, поскольку он не требует взятия производной целевой функции (что заметно ускоряет вычисления).
+
+\vspace{\baselineskip}
+
+Впишем три кривые:
+
+\begin{enumerate}
+  \setlength\itemsep{-0.1em}
+  \item Варьируя массу балджа при фиксированной массе диска, уменьшенной на 10\%; остальные параметры равны начальным;
+  \item Варьируя массу и масштаб балджа при фиксированной массе диска, уменьшенной на 10\%; остальные параметры равны начальным;
+  \item Варьируя все параметры, начиная с начальных, уменьшенных на 10\%.
+\end{enumerate}
+
+\newpage
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[scale=0.75]{Fit rotation curves}
+  \caption{Вписанные кривые вращения}
+\end{figure}
+
+В результате получаем, что в первых двух случаях оптимизации параметров потенциала балджа недостаточно для получения начальной кривой вращения. Более того, значения скоростей получаются выше начальных, несмотря на то, что масса диска была уменьшена. То есть балдж становится массивнее:
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{ccc}
+    \toprule
+    Случай &
+    $ M_b \; [M_0] $ &
+    $ b_b \; [\mathrm{кпк}] $ \\
+    \midrule
+    Начальная & 443 & 0.2672 \\
+    1 & 489.6592 & 0.2672 \\
+    2 & 550.9897 & 0.5818 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Отпуская все параметры в третьем случае, мы однозначно находим их истинные значения.
+
+\end{document}
